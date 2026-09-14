@@ -21,10 +21,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-development-key-change-me-before-deploying"
 
 # SECURITY WARNING: never run with debug turned on in production.
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
-
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", ".onrender.com"]
 
 # Application definition
 
@@ -39,7 +38,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -102,8 +103,14 @@ USE_TZ = True
 # Static files (CSS, JavaScript)
 
 STATIC_URL = "static/"
-# Destination for `collectstatic` when deploying.
+# Destination for collectstatic when deploying.
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Uploaded files (employee profile photos)
 MEDIA_URL = "media/"
