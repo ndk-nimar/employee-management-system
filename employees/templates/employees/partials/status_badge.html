@@ -1,0 +1,4 @@
+{# Usage: {% include "employees/partials/status_badge.html" with employee=employee %} #}
+<span class="status-badge {{ employee.status_css }}">
+  <span class="status-dot"></span>{{ employee.get_employment_status_display }}
+</span>

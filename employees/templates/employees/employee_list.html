@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block page_heading %}Employees{% endblock %}
+{% block page_subheading %}
+  <p class="topbar__subtitle">{{ total_matches }} record{{ total_matches|pluralize }} in the directory</p>
+{% endblock %}
+
+{% block content %}
+
+<!-- Search and filters -->
+<form method="get" class="filter-bar" role="search">
+  <div class="filter-bar__search">
+    <i class="bi bi-search"></i>
+    {{ form.q }}
+  </div>
+  <div class="filter-bar__controls">
+    {{ form.department }}
+    {{ form.status }}
+    {{ form.sort }}
+    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Apply</button>
+    {% if has_filters %}
+      <a href="{% url 'employees:employee_list' %}" class="btn btn-ghost" title="Clear search and filters">
+        <i class="bi bi-arrow-counterclockwise"></i> Reset
+      </a>
+    {% endif %}
+  </div>
+</form>
+
+{% if employees %}
+  <div class="panel panel--table">
+    <div class="table-scroll">
+      <table class="table employee-table align-middle mb-0">
+        <thead>
+          <tr>
+            <th scope="col">Employee</th>
+            <th scope="col">ID</th>
+            <th scope="col">Department</th>
+            <th scope="col">Designation</th>
+            <th scope="col">Contact</th>
+            <th scope="col">Status</th>
+            <th scope="col">Joined</th>
+            <th scope="col" class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for employee in employees %}
+            <tr>
+              <td>
+                <a class="employee-cell" href="{{ employee.get_absolute_url }}">
+                  {% include "employees/partials/avatar.html" with employee=employee size="md" %}
+                  <span class="employee-cell__text">
+                    <strong>{{ employee.full_name }}</strong>
+                    <small>{{ employee.get_gender_display }} · {{ employee.age }} yrs</small>
+                  </span>
+                </a>
+              </td>
+              <td><span class="mono-id">{{ employee.employee_id }}</span></td>
+              <td>{{ employee.department }}</td>
+              <td>{{ employee.designation }}</td>
+              <td>
+                <span class="contact-cell">
+                  <a href="mailto:{{ employee.email }}">{{ employee.email }}</a>
+                  <small>{{ employee.phone_number }}</small>
+                </span>
+              </td>
+              <td>{% include "employees/partials/status_badge.html" with employee=employee %}</td>
+              <td>{{ employee.date_of_joining|date:"d M Y" }}</td>
+              <td class="text-end">
+                <div class="row-actions">
+                  <a href="{{ employee.get_absolute_url }}" class="icon-btn" title="View profile"><i class="bi bi-eye"></i></a>
+                  <a href="{% url 'employees:employee_update' employee.pk %}" class="icon-btn" title="Edit"><i class="bi bi-pencil"></i></a>
+                  <button type="button"
+                          class="icon-btn icon-btn--danger"
+                          title="Delete"
+                          data-bs-toggle="modal"
+                          data-bs-target="#deleteModal"
+                          data-employee-name="{{ employee.full_name }}"
+                          data-employee-id="{{ employee.employee_id }}"
+                          data-delete-url="{% url 'employees:employee_delete' employee.pk %}">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "employees/partials/pagination.html" with page_obj=page_obj querystring=querystring %}
+  </div>
+
+{% elif has_filters %}
+  <div class="empty-state">
+    <span class="empty-state__icon"><i class="bi bi-search"></i></span>
+    <h2>No employees match this search</h2>
+    <p>Try a different name, employee ID or email, or clear the filters to see everyone.</p>
+    <a href="{% url 'employees:employee_list' %}" class="btn btn-primary">Clear filters</a>
+  </div>
+
+{% else %}
+  <div class="empty-state">
+    <span class="empty-state__icon"><i class="bi bi-people"></i></span>
+    <h2>The directory is empty</h2>
+    <p>Add your first employee, or load ten sample records with <code>python manage.py seed_data</code>.</p>
+    <a href="{% url 'employees:employee_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add employee</a>
+  </div>
+{% endif %}
+
+<!-- Delete confirmation modal (posts to the delete view) -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content confirm-modal">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="deleteModalLabel">Delete employee</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-1">This permanently removes <strong data-delete-name>this employee</strong>
+          (<span data-delete-id></span>) from the directory.</p>
+        <p class="text-muted mb-0 small">Deleted records cannot be restored.</p>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Keep employee</button>
+        <form method="post" data-delete-form action="">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Delete employee</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

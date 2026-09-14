@@ -1,0 +1,41 @@
+{# Usage: include with page_obj and querystring. #}
+{# `querystring` holds the active search/filter parameters, minus `page`,   #}
+{# so moving between pages keeps the current search and filters applied.    #}
+{% if page_obj.paginator.num_pages > 1 %}
+<nav class="table-pagination" aria-label="Employee pages">
+  <p class="table-pagination__summary">
+    Showing {{ page_obj.start_index }}&ndash;{{ page_obj.end_index }} of {{ page_obj.paginator.count }} employees
+  </p>
+  <ul class="pagination pagination-sm mb-0">
+    {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?{% if querystring %}{{ querystring }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Previous page">
+          <i class="bi bi-chevron-left"></i>
+        </a>
+      </li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-left"></i></span></li>
+    {% endif %}
+
+    {% for num in page_obj.paginator.page_range %}
+      {% if num == page_obj.number %}
+        <li class="page-item active" aria-current="page"><span class="page-link">{{ num }}</span></li>
+      {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <li class="page-item">
+          <a class="page-link" href="?{% if querystring %}{{ querystring }}&amp;{% endif %}page={{ num }}">{{ num }}</a>
+        </li>
+      {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?{% if querystring %}{{ querystring }}&amp;{% endif %}page={{ page_obj.next_page_number }}" aria-label="Next page">
+          <i class="bi bi-chevron-right"></i>
+        </a>
+      </li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-right"></i></span></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}

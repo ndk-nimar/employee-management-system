@@ -1,0 +1,17 @@
+{% if messages %}
+<div class="toast-stack" aria-live="polite">
+  {% for message in messages %}
+    <div class="app-toast app-toast--{{ message.tags|default:'info' }}" data-autodismiss>
+      <i class="bi
+        {% if 'success' in message.tags %}bi-check-circle-fill
+        {% elif 'danger' in message.tags %}bi-exclamation-octagon-fill
+        {% elif 'warning' in message.tags %}bi-exclamation-triangle-fill
+        {% else %}bi-info-circle-fill{% endif %}"></i>
+      <span class="app-toast__text">{{ message }}</span>
+      <button type="button" class="app-toast__close" data-toast-close aria-label="Dismiss">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}

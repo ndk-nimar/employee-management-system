@@ -1,0 +1,5 @@
+# Web framework (project built and tested against Django 5.x / 6.x)
+Django>=5.0,<7.0
+
+# Required by Django's ImageField for employee profile photos
+Pillow>=10.0

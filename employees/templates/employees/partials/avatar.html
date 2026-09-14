@@ -1,0 +1,11 @@
+{# Usage: {% include "employees/partials/avatar.html" with employee=employee size="md" %} #}
+{% if employee.profile_photo %}
+  <img class="avatar avatar--{{ size|default:'md' }}"
+       src="{{ employee.profile_photo.url }}"
+       alt="Photo of {{ employee.full_name }}">
+{% else %}
+  <span class="avatar avatar--{{ size|default:'md' }}"
+        style="background: {{ employee.avatar_color }}"
+        title="{{ employee.full_name }}"
+        aria-hidden="true">{{ employee.initials }}</span>
+{% endif %}

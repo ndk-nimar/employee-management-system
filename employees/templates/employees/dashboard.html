@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block page_heading %}{{ greeting }}, {{ user.first_name|default:user.username }}{% endblock %}
+{% block page_subheading %}
+  <p class="topbar__subtitle">Here is how the team looks today.</p>
+{% endblock %}
+
+{% block content %}
+
+<!-- Statistic cards -->
+<section class="stat-grid">
+  <article class="stat-card stat-card--total">
+    <p class="stat-card__label">Total employees</p>
+    <p class="stat-card__value">{{ total_employees }}</p>
+    <p class="stat-card__meta"><i class="bi bi-people"></i> Everyone on record</p>
+  </article>
+
+  <article class="stat-card stat-card--active">
+    <p class="stat-card__label">Active</p>
+    <p class="stat-card__value">{{ active_count }}</p>
+    <p class="stat-card__meta"><i class="bi bi-check-circle"></i> Currently working</p>
+  </article>
+
+  <article class="stat-card stat-card--leave">
+    <p class="stat-card__label">On leave</p>
+    <p class="stat-card__value">{{ on_leave_count }}</p>
+    <p class="stat-card__meta"><i class="bi bi-hourglass-split"></i> Temporarily away</p>
+  </article>
+
+  <article class="stat-card stat-card--resigned">
+    <p class="stat-card__label">Resigned</p>
+    <p class="stat-card__value">{{ resigned_count }}</p>
+    <p class="stat-card__meta"><i class="bi bi-box-arrow-right"></i> No longer with us</p>
+  </article>
+</section>
+
+<!-- Charts -->
+<section class="panel-grid">
+  <article class="panel panel--chart">
+    <header class="panel__head">
+      <div>
+        <h2 class="panel__title">Employees by department</h2>
+        <p class="panel__subtitle">Headcount across every department with at least one record.</p>
+      </div>
+      <a href="{% url 'employees:employee_list' %}" class="btn btn-ghost btn-sm">Open directory</a>
+    </header>
+    <div class="panel__body">
+      {% if department_labels %}
+        <div class="chart-holder"><canvas id="departmentChart" height="240"></canvas></div>
+      {% else %}
+        <p class="text-muted mb-0">Add an employee to see the department breakdown.</p>
+      {% endif %}
+    </div>
+  </article>
+
+  <article class="panel panel--donut">
+    <header class="panel__head">
+      <div>
+        <h2 class="panel__title">Employment status</h2>
+        <p class="panel__subtitle">Share of the team by status.</p>
+      </div>
+    </header>
+    <div class="panel__body">
+      {% if total_employees %}
+        <div class="chart-holder chart-holder--donut"><canvas id="statusChart" height="220"></canvas></div>
+        <dl class="mini-stats">
+          <div><dt>Average salary</dt><dd>₹{{ average_salary|floatformat:0 }}</dd></div>
+          <div><dt>Total payroll</dt><dd>₹{{ total_payroll|floatformat:0 }}</dd></div>
+        </dl>
+      {% else %}
+        <p class="text-muted mb-0">No status data yet.</p>
+      {% endif %}
+    </div>
+  </article>
+</section>
+
+<!-- Recent + department table + quick actions -->
+<section class="panel-grid panel-grid--split">
+  <article class="panel">
+    <header class="panel__head">
+      <div>
+        <h2 class="panel__title">Recently added</h2>
+        <p class="panel__subtitle">The five newest records in the directory.</p>
+      </div>
+    </header>
+    <div class="panel__body panel__body--flush">
+      {% if recent_employees %}
+        <ul class="recent-list">
+          {% for employee in recent_employees %}
+            <li class="recent-list__item">
+              <a href="{{ employee.get_absolute_url }}" class="recent-list__link">
+                {% include "employees/partials/avatar.html" with employee=employee size="md" %}
+                <span class="recent-list__text">
+                  <strong>{{ employee.full_name }}</strong>
+                  <small>{{ employee.designation }} · {{ employee.department }}</small>
+                </span>
+                {% include "employees/partials/status_badge.html" with employee=employee %}
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="p-4 text-muted mb-0">Nothing here yet. Add your first employee to get started.</p>
+      {% endif %}
+    </div>
+  </article>
+
+  <div class="side-column">
+    <article class="panel">
+      <header class="panel__head">
+        <div>
+          <h2 class="panel__title">Department headcount</h2>
+        </div>
+      </header>
+      <div class="panel__body panel__body--flush">
+        {% if department_rows %}
+          <ul class="dept-list">
+            {% for row in department_rows %}
+              <li class="dept-list__item">
+                <span>{{ row.department }}</span>
+                <span class="dept-list__count">{{ row.total }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="p-4 text-muted mb-0">No departments to show.</p>
+        {% endif %}
+      </div>
+    </article>
+
+    <article class="panel">
+      <header class="panel__head">
+        <div><h2 class="panel__title">Quick actions</h2></div>
+      </header>
+      <div class="panel__body quick-actions">
+        <a href="{% url 'employees:employee_create' %}" class="quick-action">
+          <i class="bi bi-person-plus"></i>
+          <span><strong>Add employee</strong><small>Create a new record</small></span>
+          <i class="bi bi-chevron-right quick-action__chevron"></i>
+        </a>
+        <a href="{% url 'employees:employee_list' %}" class="quick-action">
+          <i class="bi bi-people"></i>
+          <span><strong>View employees</strong><small>Search, filter and edit</small></span>
+          <i class="bi bi-chevron-right quick-action__chevron"></i>
+        </a>
+        <a href="{% url 'employees:employee_list' %}?status=ON_LEAVE" class="quick-action">
+          <i class="bi bi-hourglass-split"></i>
+          <span><strong>Who is on leave</strong><small>Filtered directory view</small></span>
+          <i class="bi bi-chevron-right quick-action__chevron"></i>
+        </a>
+      </div>
+    </article>
+  </div>
+</section>
+
+{{ department_labels|json_script:"department-labels" }}
+{{ department_values|json_script:"department-values" }}
+{{ status_labels|json_script:"status-labels" }}
+{{ status_values|json_script:"status-values" }}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{% static 'employees/js/charts.js' %}"></script>
+{% endblock %}

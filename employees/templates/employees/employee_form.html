@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block page_heading %}{{ form_heading }}{% endblock %}
+{% block page_subheading %}
+  <p class="topbar__subtitle">{{ form_subheading }}</p>
+{% endblock %}
+
+{% block content %}
+
+<a href="{% if employee %}{{ employee.get_absolute_url }}{% else %}{% url 'employees:employee_list' %}{% endif %}" class="back-link">
+  <i class="bi bi-arrow-left"></i> {% if employee %}Back to profile{% else %}Back to employees{% endif %}
+</a>
+
+<form method="post" enctype="multipart/form-data" novalidate class="employee-form">
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+  {% endif %}
+
+  {% for legend, fields in form.fieldsets %}
+    <article class="panel">
+      <header class="panel__head">
+        <div>
+          <h2 class="panel__title">{{ legend }}</h2>
+        </div>
+      </header>
+      <div class="panel__body">
+        <div class="form-grid">
+          {% for field in fields %}
+            <div class="form-field {% if field.name == 'address' or field.name == 'profile_photo' %}form-field--wide{% endif %} {% if field.errors %}has-error{% endif %}">
+              <label for="{{ field.id_for_label }}" class="form-label">
+                {{ field.label }}{% if field.field.required %}<span class="required-dot" title="Required">*</span>{% endif %}
+              </label>
+
+              {% if field.name == 'profile_photo' and employee and employee.profile_photo %}
+                <div class="photo-preview">
+                  <img src="{{ employee.profile_photo.url }}" alt="Current photo of {{ employee.full_name }}">
+                  <span>Current photo. Choosing a new file replaces it; leaving this empty keeps it.</span>
+                </div>
+              {% endif %}
+
+              {{ field }}
+
+              {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
+              {% for error in field.errors %}
+                <p class="form-error"><i class="bi bi-exclamation-circle"></i> {{ error }}</p>
+              {% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </article>
+  {% endfor %}
+
+  <div class="form-actions">
+    <a href="{% if employee %}{{ employee.get_absolute_url }}{% else %}{% url 'employees:employee_list' %}{% endif %}" class="btn btn-ghost">Cancel</a>
+    <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> {{ submit_label }}</button>
+  </div>
+</form>
+
+{% endblock %}

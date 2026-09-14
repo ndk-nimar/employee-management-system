@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block page_heading %}Delete employee{% endblock %}
+{% block page_subheading %}
+  <p class="topbar__subtitle">This action cannot be undone.</p>
+{% endblock %}
+
+{% block content %}
+
+<a href="{{ employee.get_absolute_url }}" class="back-link"><i class="bi bi-arrow-left"></i> Back to profile</a>
+
+<section class="panel confirm-panel">
+  <span class="confirm-panel__icon"><i class="bi bi-exclamation-triangle"></i></span>
+  <h2>Remove {{ employee.full_name }} from the directory?</h2>
+  <p>The record below will be permanently deleted, including the uploaded photo.</p>
+
+  <div class="confirm-panel__card">
+    {% include "employees/partials/avatar.html" with employee=employee size="lg" %}
+    <div>
+      <strong>{{ employee.full_name }}</strong>
+      <small>{{ employee.designation }} · {{ employee.department }}</small>
+      <small><span class="mono-id">{{ employee.employee_id }}</span> · {{ employee.email }}</small>
+    </div>
+    {% include "employees/partials/status_badge.html" with employee=employee %}
+  </div>
+
+  {# Deletion happens on POST only, and the CSRF token proves the request
+     came from this page rather than from another site. #}
+  <form method="post" class="confirm-panel__actions">
+    {% csrf_token %}
+    <a href="{{ employee.get_absolute_url }}" class="btn btn-ghost">Keep employee</a>
+    <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Delete employee</button>
+  </form>
+</section>
+
+{% endblock %}
