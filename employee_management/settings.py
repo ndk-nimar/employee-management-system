@@ -16,9 +16,13 @@ from django.contrib.messages import constants as message_constants
 # Build paths inside the project like this: BASE_DIR / "subdir".
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: this key is fine for local development only.
-# In production, read it from an environment variable instead.
-SECRET_KEY = "django-insecure-development-key-change-me-before-deploying"
+import os
+
+# SECURITY WARNING: keep the secret key private.
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY",
+    "django-insecure-local-development-key"
+)
 
 # SECURITY WARNING: never run with debug turned on in production.
 DEBUG = False
