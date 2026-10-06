@@ -1,33 +1,47 @@
 """
 Django settings for the Employee Management System.
 
-This is a development-oriented configuration:
-  * DEBUG is True
-  * SQLite is used as the database
-  * media files are served by Django itself
+Configuration comes from environment variables so the same code runs locally
+and in production:
 
-See the README for the changes required before deploying to production.
+  DJANGO_DEBUG          "True" locally (default), "False" in production
+  DJANGO_SECRET_KEY     required when DEBUG is False
+  DJANGO_ALLOWED_HOSTS  comma-separated hostnames
+  DATABASE_URL          optional; defaults to the local SQLite file
+
+See .env.example for a template.
 """
 
+import os
 from pathlib import Path
+
+import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 from django.contrib.messages import constants as message_constants
 
 # Build paths inside the project like this: BASE_DIR / "subdir".
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-import os
+DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() in ("1", "true", "yes")
 
-# SECURITY WARNING: keep the secret key private.
-SECRET_KEY = os.environ.get(
-    "DJANGO_SECRET_KEY",
-    "django-insecure-local-development-key"
-)
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured("Set DJANGO_SECRET_KEY when DJANGO_DEBUG is False.")
+    # Local development only; never used in production.
+    SECRET_KEY = "django-insecure-local-development-only"
 
-# SECURITY WARNING: never run with debug turned on in production.
-DEBUG = False
+ALLOWED_HOSTS = os.environ.get(
+    "DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,.onrender.com"
+).split(",")
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", ".onrender.com"]
+# Render (and most hosts) terminate HTTPS at a proxy in front of Django.
+CSRF_TRUSTED_ORIGINS = [
+    origin
+    for origin in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin
+]
 
 # Application definition
 
@@ -42,7 +56,6 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -76,13 +89,13 @@ WSGI_APPLICATION = "employee_management.wsgi.application"
 ASGI_APPLICATION = "employee_management.asgi.application"
 
 
-# Database - SQLite, no external setup required.
+# Database - SQLite locally; PostgreSQL in production via DATABASE_URL.
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
+    )
 }
 
 
@@ -110,9 +123,16 @@ STATIC_URL = "static/"
 # Destination for collectstatic when deploying.
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# The hashed-manifest backend needs `collectstatic` to have run, so it is only
+# used in production. Locally (and in tests) plain static storage is used.
 STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": (
+            "django.contrib.staticfiles.storage.StaticFilesStorage"
+            if DEBUG
+            else "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        ),
     },
 }
 
@@ -121,6 +141,15 @@ MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# Production hardening (only applied when DEBUG is False).
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 3600
 
 
 # Authentication redirects
